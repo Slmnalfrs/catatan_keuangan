@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
+import 'pages/home_page.dart';
 
 void main() {
-  runApp(const MainApp());
+  runApp(CatatanKeuanganApp());
 }
 
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
-
+class CatatanKeuanganApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Text('Catatan Keuangan'),
-        ),
+    return MaterialApp(
+      title: 'Catatan Keuangan',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        primarySwatch: Colors.green,
       ),
+      home: HomePage(),
     );
   }
 }

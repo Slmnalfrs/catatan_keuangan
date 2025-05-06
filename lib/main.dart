@@ -11,9 +11,7 @@ class CatatanKeuanganApp extends StatelessWidget {
     return MaterialApp(
       title: 'Catatan Keuangan',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.green,
-      ),
+      theme: ThemeData(primarySwatch: Colors.green),
       home: HomePage(),
     );
   }

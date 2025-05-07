@@ -31,6 +31,37 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  void _navigateToEditTransaction(int index) async {
+    final tx = _transactions[index];
+
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddTransactionPage(
+          initialData: {
+            'title': tx.title,
+            'amount': tx.amount,
+            'type': tx.type,
+            'category': tx.category,
+          },
+        ),
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        _transactions[index] = Transaction(
+          id: tx.id, // keep the same ID
+          title: result['title'],
+          amount: result['amount'],
+          type: result['type'],
+          category: result['category'],
+          date: DateTime.now(), // update the date to now
+        );
+      });
+    }
+  }
+
   String _formatCurrency(double amount) {
     final formatter = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
     return formatter.format(amount);
@@ -122,6 +153,7 @@ class _HomePageState extends State<HomePage> {
                     subtitle:
                         Text('${_formatCurrency(tx.amount)} - ${tx.type} • ${tx.category}'),
                     trailing: Text(DateFormat('dd/MM/yyyy').format(tx.date)),
+                    onTap: () => _navigateToEditTransaction(index),
                   );
                 },
               ),

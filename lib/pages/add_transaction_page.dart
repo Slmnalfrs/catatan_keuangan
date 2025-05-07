@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
 class AddTransactionPage extends StatefulWidget {
+  final Map<String, dynamic>? initialData;
+
+  AddTransactionPage({this.initialData});
+
   @override
   _AddTransactionPageState createState() => _AddTransactionPageState();
 }
@@ -15,6 +19,17 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   final List<String> _categories = [
     'Gaji', 'Makanan', 'Transportasi', 'Belanja', 'Hiburan', 'Lainnya',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialData != null) {
+      _title = widget.initialData!['title'] ?? '';
+      _amount = widget.initialData!['amount'] ?? 0;
+      _type = widget.initialData!['type'] ?? 'Pemasukan';
+      _category = widget.initialData!['category'] ?? 'Lainnya';
+    }
+  }
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
@@ -31,7 +46,9 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Tambah Transaksi')),
+      appBar: AppBar(
+        title: Text(widget.initialData == null ? 'Tambah Transaksi' : 'Edit Transaksi'),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -39,11 +56,13 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
           child: Column(
             children: [
               TextFormField(
+                initialValue: _title,
                 decoration: InputDecoration(labelText: 'Judul'),
                 validator: (value) => value!.isEmpty ? 'Judul tidak boleh kosong' : null,
                 onSaved: (value) => _title = value!,
               ),
               TextFormField(
+                initialValue: _amount != 0 ? _amount.toString() : '',
                 decoration: InputDecoration(labelText: 'Nominal'),
                 keyboardType: TextInputType.number,
                 validator: (value) => double.tryParse(value!.replaceAll('.', '')) == null

@@ -18,7 +18,7 @@ class _HomePageState extends State<HomePage> {
       MaterialPageRoute(builder: (context) => AddTransactionPage()),
     );
 
-    if (result != null) {
+    if (result != null && result['action'] == 'add') {
       final newTx = Transaction(
         id: DateTime.now().toString(),
         title: result['title'],
@@ -27,6 +27,7 @@ class _HomePageState extends State<HomePage> {
         category: result['category'],
         date: DateTime.now(),
       );
+
       setState(() => _transactions.add(newTx));
     }
   }
@@ -49,16 +50,22 @@ class _HomePageState extends State<HomePage> {
     );
 
     if (result != null) {
-      setState(() {
-        _transactions[index] = Transaction(
-          id: tx.id, // keep the same ID
-          title: result['title'],
-          amount: result['amount'],
-          type: result['type'],
-          category: result['category'],
-          date: DateTime.now(), // update the date to now
-        );
-      });
+      if (result['action'] == 'save') {
+        setState(() {
+          _transactions[index] = Transaction(
+            id: tx.id,
+            title: result['title'],
+            amount: result['amount'],
+            type: result['type'],
+            category: result['category'],
+            date: DateTime.now(),
+          );
+        });
+      } else if (result['action'] == 'delete') {
+        setState(() {
+          _transactions.removeAt(index);
+        });
+      }
     }
   }
 
@@ -143,20 +150,23 @@ class _HomePageState extends State<HomePage> {
             SizedBox(height: 16),
             Text('Transaksi Terbaru', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             Expanded(
-              child: ListView.builder(
-                itemCount: _transactions.length,
-                itemBuilder: (context, index) {
-                  final tx = _transactions[index];
-                  return ListTile(
-                    leading: CircleAvatar(child: Icon(Icons.monetization_on)),
-                    title: Text(tx.title),
-                    subtitle:
-                        Text('${_formatCurrency(tx.amount)} - ${tx.type} • ${tx.category}'),
-                    trailing: Text(DateFormat('dd/MM/yyyy').format(tx.date)),
-                    onTap: () => _navigateToEditTransaction(index),
-                  );
-                },
-              ),
+              child: _transactions.isEmpty
+                  ? Center(child: Text('Belum ada transaksi'))
+                  : ListView.builder(
+                      itemCount: _transactions.length,
+                      itemBuilder: (context, index) {
+                        final tx = _transactions[index];
+                        return ListTile(
+                          leading: CircleAvatar(child: Icon(Icons.monetization_on)),
+                          title: Text(tx.title),
+                          subtitle: Text(
+                            '${_formatCurrency(tx.amount)} - ${tx.type} • ${tx.category}',
+                          ),
+                          trailing: Text(DateFormat('dd/MM/yyyy').format(tx.date)),
+                          onTap: () => _navigateToEditTransaction(index),
+                        );
+                      },
+                    ),
             ),
           ],
         ),

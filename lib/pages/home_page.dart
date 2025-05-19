@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '/models/transaction.dart';
 import 'add_transaction_page.dart';
+import 'list_transaction_page.dart'; // <-- Import file baru
 
 class HomePage extends StatefulWidget {
   @override
@@ -164,34 +165,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildHistoryTab() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: _transactions.isEmpty
-          ? Center(child: Text('Belum ada transaksi.'))
-          : ListView.builder(
-              itemCount: _transactions.length,
-              itemBuilder: (context, index) {
-                final tx = _transactions[index];
-                return Card(
-                  child: ListTile(
-                    leading: Icon(
-                      tx.type == 'Pemasukan' ? Icons.arrow_downward : Icons.arrow_upward,
-                      color: tx.type == 'Pemasukan' ? Colors.green : Colors.red,
-                    ),
-                    title: Text(tx.title),
-                    subtitle: Text('${tx.category} • ${DateFormat('dd/MM/yyyy').format(tx.date)}'),
-                    trailing: Text(
-                      _formatCurrency(tx.amount),
-                      style: TextStyle(
-                        color: tx.type == 'Pemasukan' ? Colors.green : Colors.red,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    onTap: () => _navigateToEditTransaction(index),
-                  ),
-                );
-              },
-            ),
+    return ListTransactionPage(
+      transactions: _transactions,
+      onTapItem: _navigateToEditTransaction,
     );
   }
 

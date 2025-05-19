@@ -18,7 +18,7 @@ class _HomePageState extends State<HomePage> {
       MaterialPageRoute(builder: (context) => AddTransactionPage()),
     );
 
-    if (result != null && result['action'] == 'add') {
+    if (result != null) {
       final newTx = Transaction(
         id: DateTime.now().toString(),
         title: result['title'],
@@ -27,7 +27,6 @@ class _HomePageState extends State<HomePage> {
         category: result['category'],
         date: DateTime.now(),
       );
-
       setState(() => _transactions.add(newTx));
     }
   }
@@ -45,27 +44,25 @@ class _HomePageState extends State<HomePage> {
             'type': tx.type,
             'category': tx.category,
           },
+          onDelete: () {
+            setState(() => _transactions.removeAt(index));
+            Navigator.pop(context);
+          },
         ),
       ),
     );
 
     if (result != null) {
-      if (result['action'] == 'save') {
-        setState(() {
-          _transactions[index] = Transaction(
-            id: tx.id,
-            title: result['title'],
-            amount: result['amount'],
-            type: result['type'],
-            category: result['category'],
-            date: DateTime.now(),
-          );
-        });
-      } else if (result['action'] == 'delete') {
-        setState(() {
-          _transactions.removeAt(index);
-        });
-      }
+      setState(() {
+        _transactions[index] = Transaction(
+          id: tx.id,
+          title: result['title'],
+          amount: result['amount'],
+          type: result['type'],
+          category: result['category'],
+          date: DateTime.now(),
+        );
+      });
     }
   }
 
@@ -86,91 +83,124 @@ class _HomePageState extends State<HomePage> {
     return income - expense;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Catatan Keuangan'), centerTitle: true),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Card(
-              color: Colors.green[100],
-              child: ListTile(
-                title: Text('Total Saldo', style: TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text(
-                  _formatCurrency(_calculateTotalBalance()),
-                  style: TextStyle(fontSize: 24, color: Colors.green[900]),
-                ),
+  Widget _buildHomeTab() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Card(
+            color: Colors.green[100],
+            child: ListTile(
+              title: Text('Total Saldo', style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: Text(
+                _formatCurrency(_calculateTotalBalance()),
+                style: TextStyle(fontSize: 24, color: Colors.green[900]),
               ),
             ),
-            SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: Card(
-                    color: Colors.blue[100],
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        children: [
-                          Text('Pemasukan', style: TextStyle(fontWeight: FontWeight.bold)),
-                          SizedBox(height: 8),
-                          Text(
-                            _formatCurrency(_calculateTotalByType('Pemasukan')),
-                            style: TextStyle(fontSize: 16, color: Colors.blue[900]),
-                          ),
-                        ],
-                      ),
+          ),
+          SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: Card(
+                  color: Colors.blue[100],
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      children: [
+                        Text('Pemasukan', style: TextStyle(fontWeight: FontWeight.bold)),
+                        SizedBox(height: 8),
+                        Text(
+                          _formatCurrency(_calculateTotalByType('Pemasukan')),
+                          style: TextStyle(fontSize: 16, color: Colors.blue[900]),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Card(
-                    color: Colors.red[100],
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        children: [
-                          Text('Pengeluaran', style: TextStyle(fontWeight: FontWeight.bold)),
-                          SizedBox(height: 8),
-                          Text(
-                            _formatCurrency(_calculateTotalByType('Pengeluaran')),
-                            style: TextStyle(fontSize: 16, color: Colors.red[900]),
-                          ),
-                        ],
-                      ),
+              ),
+              SizedBox(width: 8),
+              Expanded(
+                child: Card(
+                  color: Colors.red[100],
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      children: [
+                        Text('Pengeluaran', style: TextStyle(fontWeight: FontWeight.bold)),
+                        SizedBox(height: 8),
+                        Text(
+                          _formatCurrency(_calculateTotalByType('Pengeluaran')),
+                          style: TextStyle(fontSize: 16, color: Colors.red[900]),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              ],
+              ),
+            ],
+          ),
+          SizedBox(height: 16),
+          Text('Transaksi Terbaru', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Expanded(
+            child: ListView.builder(
+              itemCount: _transactions.length,
+              itemBuilder: (context, index) {
+                final tx = _transactions[index];
+                return ListTile(
+                  leading: CircleAvatar(child: Icon(Icons.monetization_on)),
+                  title: Text(tx.title),
+                  subtitle: Text('${_formatCurrency(tx.amount)} - ${tx.type} • ${tx.category}'),
+                  trailing: Text(DateFormat('dd/MM/yyyy').format(tx.date)),
+                  onTap: () => _navigateToEditTransaction(index),
+                );
+              },
             ),
-            SizedBox(height: 16),
-            Text('Transaksi Terbaru', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            Expanded(
-              child: _transactions.isEmpty
-                  ? Center(child: Text('Belum ada transaksi'))
-                  : ListView.builder(
-                      itemCount: _transactions.length,
-                      itemBuilder: (context, index) {
-                        final tx = _transactions[index];
-                        return ListTile(
-                          leading: CircleAvatar(child: Icon(Icons.monetization_on)),
-                          title: Text(tx.title),
-                          subtitle: Text(
-                            '${_formatCurrency(tx.amount)} - ${tx.type} • ${tx.category}',
-                          ),
-                          trailing: Text(DateFormat('dd/MM/yyyy').format(tx.date)),
-                          onTap: () => _navigateToEditTransaction(index),
-                        );
-                      },
-                    ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildHistoryTab() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: _transactions.isEmpty
+          ? Center(child: Text('Belum ada transaksi.'))
+          : ListView.builder(
+              itemCount: _transactions.length,
+              itemBuilder: (context, index) {
+                final tx = _transactions[index];
+                return Card(
+                  child: ListTile(
+                    leading: Icon(
+                      tx.type == 'Pemasukan' ? Icons.arrow_downward : Icons.arrow_upward,
+                      color: tx.type == 'Pemasukan' ? Colors.green : Colors.red,
+                    ),
+                    title: Text(tx.title),
+                    subtitle: Text('${tx.category} • ${DateFormat('dd/MM/yyyy').format(tx.date)}'),
+                    trailing: Text(
+                      _formatCurrency(tx.amount),
+                      style: TextStyle(
+                        color: tx.type == 'Pemasukan' ? Colors.green : Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    onTap: () => _navigateToEditTransaction(index),
+                  ),
+                );
+              },
+            ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tabs = [_buildHomeTab(), _buildHistoryTab()];
+    return Scaffold(
+      appBar: AppBar(title: Text('Catatan Keuangan'), centerTitle: true),
+      body: tabs[_selectedIndex],
       floatingActionButton: FloatingActionButton(
         onPressed: _navigateToAddTransaction,
         child: Icon(Icons.add),

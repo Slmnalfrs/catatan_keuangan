@@ -3,8 +3,9 @@ import 'package:intl/intl.dart';
 
 class AddTransactionPage extends StatefulWidget {
   final Map<String, dynamic>? initialData;
+  final VoidCallback? onDelete;
 
-  AddTransactionPage({this.initialData});
+  AddTransactionPage({this.initialData, this.onDelete});
 
   @override
   _AddTransactionPageState createState() => _AddTransactionPageState();

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '/models/transaction.dart';
 import 'add_transaction_page.dart';
-import 'list_transaction_page.dart'; // <-- Import file baru
+import 'list_transaction_page.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -13,26 +14,48 @@ class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
   List<Transaction> _transactions = [];
 
-  void _navigateToAddTransaction() async {
+  final supabase = Supabase.instance.client;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTransactions();
+  }
+
+  Future<void> _loadTransactions() async {
+    final response = await supabase
+        .from('transactions')
+        .select()
+        .order('date', ascending: false);
+
+    setState(() {
+      _transactions = response
+          .map((map) => Transaction.fromMap(map))
+          .toList()
+          .cast<Transaction>();
+    });
+  }
+
+  Future<void> _navigateToAddTransaction() async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => AddTransactionPage()),
     );
 
-    if (result != null) {
-      final newTx = Transaction(
-        id: DateTime.now().toString(),
-        title: result['title'],
-        amount: result['amount'],
-        type: result['type'],
-        category: result['category'],
-        date: DateTime.now(),
-      );
-      setState(() => _transactions.add(newTx));
+    if (result != null && result['action'] == 'add') {
+      await supabase.from('transactions').insert({
+        'title': result['title'],
+        'amount': result['amount'],
+        'type': result['type'],
+        'category': result['category'],
+        'date': DateTime.now().toIso8601String(),
+      });
+
+      _loadTransactions();
     }
   }
 
-  void _navigateToEditTransaction(int index) async {
+  Future<void> _navigateToEditTransaction(int index) async {
     final tx = _transactions[index];
 
     final result = await Navigator.push(
@@ -45,31 +68,25 @@ class _HomePageState extends State<HomePage> {
             'type': tx.type,
             'category': tx.category,
           },
-          onDelete: () {
-            setState(() => _transactions.removeAt(index));
-            Navigator.pop(context);
-          },
         ),
       ),
     );
 
     if (result != null) {
-      setState(() {
-        _transactions[index] = Transaction(
-          id: tx.id,
-          title: result['title'],
-          amount: result['amount'],
-          type: result['type'],
-          category: result['category'],
-          date: DateTime.now(),
-        );
-      });
-    }
-  }
+      if (result['action'] == 'delete') {
+        await supabase.from('transactions').delete().eq('id', tx.id);
+      } else if (result['action'] == 'save') {
+        await supabase.from('transactions').update({
+          'title': result['title'],
+          'amount': result['amount'],
+          'type': result['type'],
+          'category': result['category'],
+          'date': DateTime.now().toIso8601String(),
+        }).eq('id', tx.id);
+      }
 
-  String _formatCurrency(double amount) {
-    final formatter = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
-    return formatter.format(amount);
+      _loadTransactions();
+    }
   }
 
   double _calculateTotalByType(String type) {
@@ -79,9 +96,15 @@ class _HomePageState extends State<HomePage> {
   }
 
   double _calculateTotalBalance() {
-    double income = _calculateTotalByType('Pemasukan');
-    double expense = _calculateTotalByType('Pengeluaran');
+    final income = _calculateTotalByType('Pemasukan');
+    final expense = _calculateTotalByType('Pengeluaran');
     return income - expense;
+  }
+
+  String _formatCurrency(double amount) {
+    final formatter =
+        NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+    return formatter.format(amount);
   }
 
   Widget _buildHomeTab() {
@@ -143,21 +166,25 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
           SizedBox(height: 16),
-          Text('Transaksi Terbaru', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text('Transaksi Terbaru',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           Expanded(
-            child: ListView.builder(
-              itemCount: _transactions.length,
-              itemBuilder: (context, index) {
-                final tx = _transactions[index];
-                return ListTile(
-                  leading: CircleAvatar(child: Icon(Icons.monetization_on)),
-                  title: Text(tx.title),
-                  subtitle: Text('${_formatCurrency(tx.amount)} - ${tx.type} • ${tx.category}'),
-                  trailing: Text(DateFormat('dd/MM/yyyy').format(tx.date)),
-                  onTap: () => _navigateToEditTransaction(index),
-                );
-              },
-            ),
+            child: _transactions.isEmpty
+                ? Center(child: Text('Belum ada transaksi'))
+                : ListView.builder(
+                    itemCount: _transactions.length,
+                    itemBuilder: (context, index) {
+                      final tx = _transactions[index];
+                      return ListTile(
+                        leading: CircleAvatar(child: Icon(Icons.monetization_on)),
+                        title: Text(tx.title),
+                        subtitle: Text(
+                            '${_formatCurrency(tx.amount)} - ${tx.type} • ${tx.category}'),
+                        trailing: Text(DateFormat('dd/MM/yyyy').format(tx.date)),
+                        onTap: () => _navigateToEditTransaction(index),
+                      );
+                    },
+                  ),
           ),
         ],
       ),
@@ -174,6 +201,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final tabs = [_buildHomeTab(), _buildHistoryTab()];
+
     return Scaffold(
       appBar: AppBar(title: Text('Catatan Keuangan'), centerTitle: true),
       body: tabs[_selectedIndex],
@@ -184,7 +212,7 @@ class _HomePageState extends State<HomePage> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (index) => setState(() => _selectedIndex = index),
-        items: [
+        items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Riwayat'),
         ],

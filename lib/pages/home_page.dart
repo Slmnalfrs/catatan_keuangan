@@ -192,11 +192,14 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildHistoryTab() {
-    return ListTransactionPage(
-      transactions: _transactions,
-      onTapItem: _navigateToEditTransaction,
-    );
-  }
+  return ListTransactionPage(
+    transactions: _transactions,
+    onTapItem: (tx) {
+      final index = _transactions.indexWhere((t) => t.id == tx.id);
+      _navigateToEditTransaction(index);
+    },
+  );
+}
 
   @override
   Widget build(BuildContext context) {

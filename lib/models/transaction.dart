@@ -15,24 +15,27 @@ class Transaction {
     required this.date,
   });
 
-  factory Transaction.fromMap(Map<String, dynamic> map) {
-    return Transaction(
-      id: map['id'].toString(),
-      title: map['title'],
-      amount: (map['amount'] as num).toDouble(),
-      type: map['type'],
-      category: map['category'],
-      date: DateTime.parse(map['date']),
-    );
-  }
+factory Transaction.fromMap(Map<String, dynamic> map) {
+  return Transaction(
+    id: map['id'].toString(),
+    title: map['title'] ?? '',
+    amount: (map['amount'] ?? 0).toDouble(),
+    type: map['type'] ?? '',
+    category: map['category'] ?? '',
+    date: DateTime.tryParse(map['date'] ?? '') ?? DateTime.now(),
+  );
+}
 
-  Map<String, dynamic> toMap() {
-    return {
-      'title': title,
-      'amount': amount,
-      'type': type,
-      'category': category,
-      'date': date.toIso8601String(),
-    };
-  }
+
+Map<String, dynamic> toMapWithId() {
+  return {
+    'id': id,
+    'title': title,
+    'amount': amount,
+    'type': type,
+    'category': category,
+    'date': date.toIso8601String(),
+  };
+}
+
 }

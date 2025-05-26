@@ -3,9 +3,8 @@ import 'package:intl/intl.dart';
 
 class AddTransactionPage extends StatefulWidget {
   final Map<String, dynamic>? initialData;
-  final VoidCallback? onDelete;
 
-  AddTransactionPage({this.initialData, this.onDelete});
+  AddTransactionPage({this.initialData});
 
   @override
   _AddTransactionPageState createState() => _AddTransactionPageState();
@@ -30,7 +29,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
 
     if (widget.initialData != null) {
       _title = widget.initialData!['title'] ?? '';
-      _amount = widget.initialData!['amount'] ?? 0;
+      _amount = widget.initialData!['amount']?.toDouble() ?? 0;
       _type = widget.initialData!['type'] ?? 'Pemasukan';
       _category = widget.initialData!['category'] ?? 'Lainnya';
 
@@ -60,15 +59,17 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   }
 
   String _formatCurrency(int value) {
-    final formatter = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+    final formatter =
+        NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
     return formatter.format(value);
   }
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-      String raw = _amountController.text.replaceAll(RegExp(r'[^0-9]'), '');
-      _amount = double.parse(raw);
+
+      final raw = _amountController.text.replaceAll(RegExp(r'[^0-9]'), '');
+      _amount = double.tryParse(raw) ?? 0;
 
       Navigator.of(context).pop({
         'title': _title,
@@ -95,7 +96,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
             child: Text('Hapus', style: TextStyle(color: Colors.red)),
             onPressed: () {
               Navigator.of(context).pop(); // Tutup dialog
-              Navigator.of(context).pop({'action': 'delete'}); // Kembali dengan sinyal delete
+              Navigator.of(context).pop({'action': 'delete'}); // Kirim sinyal hapus
             },
           ),
         ],
@@ -115,12 +116,13 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
         padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
-          child: Column(
+          child: ListView(
             children: [
               TextFormField(
                 initialValue: _title,
                 decoration: InputDecoration(labelText: 'Judul'),
-                validator: (value) => value!.isEmpty ? 'Judul tidak boleh kosong' : null,
+                validator: (value) =>
+                    value!.isEmpty ? 'Judul tidak boleh kosong' : null,
                 onSaved: (value) => _title = value!,
               ),
               TextFormField(

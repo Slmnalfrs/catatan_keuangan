@@ -9,10 +9,12 @@ class ListTransactionPage extends StatelessWidget {
   const ListTransactionPage({
     required this.transactions,
     required this.onTapItem,
+    super.key,
   });
 
   String _formatCurrency(double amount) {
-    final formatter = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+    final formatter =
+        NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
     return formatter.format(amount);
   }
 
@@ -21,27 +23,54 @@ class ListTransactionPage extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: transactions.isEmpty
-          ? Center(child: Text('Belum ada transaksi.'))
-          : ListView.builder(
+          ? Center(
+              child: Text(
+                'Belum ada transaksi.',
+                style: TextStyle(fontSize: 16, color: Colors.grey),
+              ),
+            )
+          : ListView.separated(
               itemCount: transactions.length,
+              separatorBuilder: (_, __) => SizedBox(height: 8),
               itemBuilder: (context, index) {
                 final tx = transactions[index];
-                return Card(
-                  child: ListTile(
-                    leading: Icon(
-                      tx.type == 'Pemasukan' ? Icons.arrow_downward : Icons.arrow_upward,
-                      color: tx.type == 'Pemasukan' ? Colors.green : Colors.red,
+                final isIncome = tx.type == 'Pemasukan';
+
+                return GestureDetector(
+                  onTap: () => onTapItem(index),
+                  child: Card(
+                    elevation: 3,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    title: Text(tx.title),
-                    subtitle: Text('${tx.category} • ${DateFormat('dd/MM/yyyy').format(tx.date)}'),
-                    trailing: Text(
-                      _formatCurrency(tx.amount),
-                      style: TextStyle(
-                        color: tx.type == 'Pemasukan' ? Colors.green : Colors.red,
-                        fontWeight: FontWeight.bold,
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      leading: CircleAvatar(
+                        backgroundColor: isIncome ? Colors.green[100] : Colors.red[100],
+                        child: Icon(
+                          isIncome ? Icons.arrow_downward : Icons.arrow_upward,
+                          color: isIncome ? Colors.green : Colors.red,
+                        ),
+                      ),
+                      title: Text(
+                        tx.title,
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Text(
+                        '${tx.category} • ${DateFormat('dd MMM yyyy').format(tx.date)}',
+                      ),
+                      trailing: Text(
+                        _formatCurrency(tx.amount),
+                        style: TextStyle(
+                          color: isIncome ? Colors.green : Colors.red,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
                     ),
-                    onTap: () => onTapItem(index),
                   ),
                 );
               },
